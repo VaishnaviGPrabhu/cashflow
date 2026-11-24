@@ -1,0 +1,1 @@
+Hiring example: use get_hiring_impact, label as SCENARIO, show runway delta, and require human review.

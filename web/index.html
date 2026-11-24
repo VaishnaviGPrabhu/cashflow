@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CashFlow warehouse</title>
+<style>
+  :root { --ink:#1d2a33; --muted:#5b6a75; --line:#d5dde2; --paper:#f4f7f8; --card:#ffffff; --accent:#1f6f78; --warn:#b4472c; --ok:#2f7d4f; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.5 system-ui, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .kpis { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi, section { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+  .kpi b { display:block; font-size: 24px; margin-top: 2px; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  section { margin-bottom: 16px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--muted); font-size: 13px; }
+  .neg { color: var(--warn); }
+  .pass { color: var(--ok); } .fail { color: var(--warn); font-weight: 600; }
+  #chart { width: 100%; height: 190px; display:block; }
+  #error { display:none; background:#fbeee9; border:1px solid var(--warn); border-radius:6px; padding:12px 16px; margin-bottom:16px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NovaTech Labs cash position</h1>
+  <p class="sub" id="runinfo">Loading warehouse…</p>
+  <div id="error" role="alert"></div>
+
+  <div class="kpis">
+    <div class="kpi"><span>Current cash</span><b id="k-cash">–</b></div>
+    <div class="kpi"><span>Monthly burn</span><b id="k-burn">–</b></div>
+    <div class="kpi"><span>Runway</span><b id="k-runway">–</b></div>
+  </div>
+
+  <section>
+    <h2>Closing cash by month</h2>
+    <svg id="chart" viewBox="0 0 800 190" role="img" aria-label="Closing cash by month"></svg>
+  </section>
+
+  <section><h2>Monthly cash flow</h2>
+    <table id="t-monthly"><thead><tr><th>Month</th><th>Inflow</th><th>Outflow</th><th>Net</th><th>Closing cash</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section><h2>Outflow by vendor</h2>
+    <table id="t-vendors"><thead><tr><th>Vendor</th><th>Category</th><th>Total spend</th><th>Share</th><th>Rank</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section><h2>Open receivables</h2>
+    <table id="t-ar"><thead><tr><th>Customer</th><th>Amount</th><th>Due</th><th>Days past due</th><th>Bucket</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section><h2>Data quality checks (latest successful run)</h2>
+    <table id="t-dq"><thead><tr><th>Check</th><th>Dataset</th><th>Severity</th><th>Result</th><th>Details</th></tr></thead><tbody></tbody></table>
+  </section>
+</main>
+
+<script>
+const money = n => (n == null ? "–" : "$" + Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 }));
+const get = url => fetch(url).then(r => r.ok ? r.json() : r.json().then(e => { throw new Error(e.detail || r.statusText); }));
+
+function addRow(tbody, cells, classes = []) {
+  const tr = document.createElement("tr");
+  cells.forEach((value, i) => {
+    const td = document.createElement("td");
+    td.textContent = value;
+    if (classes[i]) td.className = classes[i];
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+}
+const body = id => document.querySelector("#" + id + " tbody");
+
+function drawChart(rows) {
+  const svg = document.getElementById("chart");
+  const W = 800, H = 190, pad = { l: 56, r: 12, t: 12, b: 28 };
+  const values = rows.map(r => r.closing_cash);
+  const lo = Math.min(...values) * 0.98, hi = Math.max(...values) * 1.02;
+  const x = i => pad.l + (i * (W - pad.l - pad.r)) / Math.max(rows.length - 1, 1);
+  const y = v => pad.t + (1 - (v - lo) / (hi - lo)) * (H - pad.t - pad.b);
+  const ns = "http://www.w3.org/2000/svg";
+  const add = (tag, attrs, text) => { const el = document.createElementNS(ns, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); if (text) el.textContent = text; svg.appendChild(el); };
+  svg.replaceChildren();
+  add("polyline", { points: rows.map((r, i) => x(i) + "," + y(r.closing_cash)).join(" "), fill: "none", stroke: "#1f6f78", "stroke-width": 2.5 });
+  rows.forEach((r, i) => {
+    add("circle", { cx: x(i), cy: y(r.closing_cash), r: 3.5, fill: "#1f6f78" });
+    add("text", { x: x(i), y: H - 8, "text-anchor": "middle", "font-size": 11, fill: "#5b6a75" }, r.year_month.slice(5));
+  });
+  add("text", { x: pad.l - 6, y: y(hi) + 4, "text-anchor": "end", "font-size": 11, fill: "#5b6a75" }, money(hi));
+  add("text", { x: pad.l - 6, y: y(lo) + 4, "text-anchor": "end", "font-size": 11, fill: "#5b6a75" }, money(lo));
+}
+
+async function load() {
+  try {
+    const [runway, monthly, vendors, aging, status] = await Promise.all([
+      get("/warehouse/runway"), get("/warehouse/monthly-cashflow"), get("/warehouse/vendors?limit=10"),
+      get("/warehouse/receivables-aging"), get("/pipeline/status"),
+    ]);
+    document.getElementById("k-cash").textContent = money(runway.current_cash);
+    document.getElementById("k-burn").textContent = money(runway.monthly_burn);
+    document.getElementById("k-runway").textContent = runway.runway_months == null ? "Not burning cash" : runway.runway_months.toFixed(1) + " months";
+    const run = status.last_run;
+    document.getElementById("runinfo").textContent = run.run_id
+      ? "Last pipeline run " + run.status + " at " + run.finished_at + " – " + run.rows_loaded + " rows loaded, " + run.rows_rejected + " rejected."
+      : "No pipeline run recorded.";
+    drawChart(monthly);
+    monthly.forEach(r => addRow(body("t-monthly"), [r.year_month, money(r.inflow), money(r.outflow), money(r.net_cash_flow), money(r.closing_cash)], ["", "", "", r.net_cash_flow < 0 ? "neg" : "", ""]));
+    vendors.forEach(r => addRow(body("t-vendors"), [r.vendor, r.category_name, money(r.total_spend), r.share_of_outflow_pct + "%", r.spend_rank]));
+    aging.forEach(r => addRow(body("t-ar"), [r.customer, money(r.amount), r.due_date, r.days_past_due, r.aging_bucket]));
+    status.data_quality.forEach(r => addRow(body("t-dq"), [r.check_name, r.dataset, r.severity, r.passed ? "pass" : "fail", r.details], ["", "", "", r.passed ? "pass" : "fail", ""]));
+  } catch (err) {
+    const box = document.getElementById("error");
+    box.style.display = "block";
+    box.textContent = err.message + " If the warehouse has not been built yet, run: python -m pipeline.run_pipeline";
+    document.getElementById("runinfo").textContent = "Warehouse unavailable.";
+  }
+}
+load();
+</script>
+</body>
+</html>

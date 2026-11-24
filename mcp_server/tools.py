@@ -1,0 +1,1 @@
+def build_mcp_tools(finance):return {n:getattr(finance,n) for n in ['get_current_cash','get_transactions','get_accounts_receivable','get_accounts_payable','calculate_runway','calculate_variance','run_cashflow_scenario']}

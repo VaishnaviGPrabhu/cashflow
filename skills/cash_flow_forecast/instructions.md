@@ -1,0 +1,1 @@
+Use this skill for runway, burn, forecast, scenario, hiring-impact and cash-risk questions.

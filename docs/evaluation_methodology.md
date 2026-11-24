@@ -1,0 +1,1 @@
+Golden cases test numerical ground truth with tolerances. Trap cases test unsafe or unsupported behavior. Prototype pass rates are synthetic measurements.

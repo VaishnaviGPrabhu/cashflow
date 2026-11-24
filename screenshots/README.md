@@ -1,0 +1,1 @@
+Capture screenshots from the running app; none are fabricated.

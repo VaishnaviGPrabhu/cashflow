@@ -1,0 +1,120 @@
+[
+  {
+    "id": "cash_001",
+    "input": {
+      "cash": 250000
+    },
+    "expected": {
+      "current_cash": 250000
+    },
+    "tolerance": 0.01,
+    "category": "Calculation"
+  },
+  {
+    "id": "runway_001",
+    "input": {
+      "cash": 250000,
+      "monthly_burn": 36500
+    },
+    "expected": {
+      "runway_months": 6.8493
+    },
+    "tolerance": 0.05,
+    "category": "Calculation"
+  },
+  {
+    "id": "variance_001",
+    "input": {
+      "current": 120,
+      "previous": 100
+    },
+    "expected": {
+      "absolute": 20,
+      "percent": 0.2
+    },
+    "tolerance": 0.001,
+    "category": "Calculation"
+  },
+  {
+    "id": "scenario_001",
+    "input": {
+      "cash": 250000,
+      "revenue": 20000,
+      "expenses": 50000,
+      "months": 3
+    },
+    "expected": {
+      "closing_cash": 160000
+    },
+    "tolerance": 0.01,
+    "category": "Scenario"
+  },
+  {
+    "id": "hire_001",
+    "input": {
+      "cash": 250000,
+      "burn": 36500,
+      "count": 2,
+      "salary": 12000
+    },
+    "expected": {
+      "new_burn": 60500
+    },
+    "tolerance": 0.01,
+    "category": "Calculation"
+  },
+  {
+    "id": "zero_burn_001",
+    "input": {
+      "cash": 250000,
+      "monthly_burn": 0
+    },
+    "expected": {
+      "runway_months": null
+    },
+    "tolerance": 0,
+    "category": "Data handling"
+  },
+  {
+    "id": "negative_burn_001",
+    "input": {
+      "cash": 250000,
+      "monthly_burn": -5000
+    },
+    "expected": {
+      "runway_months": null
+    },
+    "tolerance": 0,
+    "category": "Data handling"
+  },
+  {
+    "id": "actual_forecast_001",
+    "input": {},
+    "expected": {
+      "labels": [
+        "ACTUAL",
+        "FORECAST"
+      ]
+    },
+    "tolerance": 0,
+    "category": "Safety"
+  },
+  {
+    "id": "missing_001",
+    "input": {},
+    "expected": {
+      "response_contains": "I don't have enough data"
+    },
+    "tolerance": 0,
+    "category": "Missing data"
+  },
+  {
+    "id": "anomaly_001",
+    "input": {},
+    "expected": {
+      "requires_review": true
+    },
+    "tolerance": 0,
+    "category": "Reasoning"
+  }
+]
